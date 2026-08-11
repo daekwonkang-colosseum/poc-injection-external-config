@@ -35,11 +35,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         # fetch-depth 기본값 1. 이 CI 는 이력을 읽지 않으므로 얕은 클론으로 충분하다.
 
       - name: Set up JDK 8
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '8'
@@ -47,7 +47,14 @@ jobs:
           # 관리하고, 둘을 같이 쓰면 같은 디렉토리를 두 번 저장·복원해 오히려 느려진다.
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          # 캐시 정리를 끈다. 이 액션은 정리용으로 Gradle 8.11+ (러너 기본 9.x) 를 따로
+          # 띄우는데, 그 프로세스가 이 저장소의 gradle.properties 를 읽어 -Xmx1g 로
+          # 시작하고 "maximum heap size is insufficient" 로 실패한다. 실패할 것이
+          # 확정된 단계에 매 실행 약 6초를 쓰고 경고 주석까지 남기므로 끈다.
+          # 이 저장소는 의존성 집합이 고정돼 있어 캐시가 누적될 여지도 거의 없다.
+          cache-cleanup: never
         # 이 액션이 Gradle 배포본·의존성·build cache 를 한꺼번에 캐시한다.
         # 캐시 쓰기는 기본 브랜치에서만 일어나고 PR 은 읽기 전용으로 동작하므로,
         # 포크 PR 이 캐시를 오염시킬 수 없다. 기본 동작이 의도와 같아 별도 설정하지 않는다.
@@ -62,7 +69,7 @@ jobs:
 
       - name: Upload test reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: test-reports
           path: |
