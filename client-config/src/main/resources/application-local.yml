@@ -1,0 +1,13 @@
+# 로컬: 짧은 timeout으로 빨리 실패하게 하고, order_api 에 전용 풀을 준다.
+pylon:
+  client:
+    connect-timeout: 500
+    providers:
+      "[order_api]":
+        read-timeout: 1000
+        max-connection: 20
+
+logging:
+  level:
+    poc.client.config: DEBUG
+    poc.apigateway.pylon: DEBUG

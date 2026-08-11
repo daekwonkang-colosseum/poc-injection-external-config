@@ -1,0 +1,15 @@
+# 프로덕션: provider 기본은 넉넉하게, 실시간 조회 스펙만 짧게 잡는다.
+# read-timeout 없이 read-timeout-per-spec 만 주면 조용히 무시된다는 점을 주의.
+pylon:
+  client:
+    connect-timeout: 2000
+    providers:
+      "[order_api]":
+        read-timeout: 3000
+        read-timeout-per-spec:
+          "[6512a0b1c2d3e4f500000001]": 1500
+
+logging:
+  level:
+    poc.client.config: INFO
+    poc.apigateway.pylon: WARN
