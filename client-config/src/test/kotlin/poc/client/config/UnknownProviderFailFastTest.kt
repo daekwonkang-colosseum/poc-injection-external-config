@@ -20,7 +20,6 @@ class UnknownProviderFailFastTest {
             )
         )
         .withUserConfiguration(Enable::class.java, PylonClientConfig::class.java)
-        .withPropertyValues("spring.main.allow-bean-definition-overriding=false")
 
     @Test
     fun `a misspelled provider name fails the context`() {

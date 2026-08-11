@@ -74,7 +74,7 @@ class PylonClientConfig {
         property.providers.forEach { (name, provider) ->
             val specIds = specIdsByProvider[name]
                 ?: throw IllegalStateException(
-                    "pylon.client.providers 에 없는 provider: '$name'. " +
+                    "생성된 jar 에 없는 provider: '$name'. " +
                         "사용 가능: ${specIdsByProvider.keys.sorted()}"
                 )
 

@@ -71,7 +71,7 @@ pylon:
 ```yaml
 api_gateway:
   manual_override:
-    version: 1
+    version: 1               # 선택. 어떤 production 코드도 읽지 않는다
     provider:
       order_api:
         server: http://127.0.0.1:9001
@@ -86,6 +86,8 @@ api_gateway:
 1. `api_gateway.manual_override.*` — scheme·host·port 통째 교체
 2. `pylon.client.providers.<name>.{scheme,port}` — scheme·port만, **host는 jar 값 유지**
 3. `initial_configuration.json` 의 provider 타겟 — jar 기본값
+
+2번을 쓰려면 `Provider.readTimeout` 이 필수 파라미터이므로 provider 단위 `read-timeout` 도 함께 줘야 하는데, 그 순간 뒤에서 설명하는 provider 일괄 설정 클로버 위험이 그대로 발동한다 — 스펙별로 더 긴 jar timeout이 있었다면 per-spec 항목으로 복구해야 한다.
 
 ## 재현한 함정 3개
 
@@ -108,7 +110,7 @@ if (provider.getDefaultTimeout() != null) {
 }
 ```
 
-provider 기본 timeout 없이 per-spec만 주면 **조용히 무시된다.** `client-config` 는 `readTimeout` 을 필수 파라미터로 만들어 이 함정을 컴파일 타임으로 끌어올린다.
+provider 기본 timeout 없이 per-spec만 주면 **조용히 무시된다.** `client-config` 는 `readTimeout` 을 필수 파라미터로 만들어 이 함정을 기동 시점으로 끌어올린다.
 
 → `TimeoutCustomizerAssemblyTest`, `PerSpecBeatsProviderTest`
 
@@ -133,6 +135,7 @@ provider 단위 `read-timeout: 1000` 을 주면 **`product_api` 의 8000이 조�
 ## 실행
 
 ```bash
+cd poc-injection-external-config
 ./gradlew test          # 전체 테스트
 ./gradlew build         # 컴파일 + 테스트
 ```
@@ -161,6 +164,6 @@ provider 단위 `read-timeout: 1000` 을 주면 **`product_api` 의 8000이 조�
 | provider 목록 접근 | `buildConfigurations.providers` | `buildConfigurations.gradlePluginGeneratingDtoLoader.providers` |
 | 호출 시그니처 | `invokeAPI(specId, request, Class)` | `invokeAPIForResponseEntity(specId, pathParams, queryParams, body, headerParams, formParams, ParameterizedTypeReference)` |
 
-POC가 버린 것: 인증 토큰, 요청 서명, rate limit, precondition, 라우팅 정책 원격 갱신, API 시뮬레이션, dry-run, 로그 포매터, Fluent API, WebClient/OkHttp3 확장.
+POC가 버린 것: 인증 토큰, 요청 서명, rate limit, precondition, 라우팅 정책 원격 갱신, API 시뮬레이션, dry-run, 로그 포매터, Fluent API, WebClient/OkHttp3 확장. `TargetUriFinder.indexTargets` 는 provider 정책의 첫 번째 region·target만 읽는다 — `usage`/`routingType` 이 암시하는 가중치 라우팅은 구현하지 않았다.
 
 `PylonConfiguration` / `SpecResolver` / `SpecCustomizer` / `TimeoutCustomizer` / `ConnectionPoolCustomizer` / `RestTemplatePool` 의 이름과 흐름은 실물과 1:1이다.
