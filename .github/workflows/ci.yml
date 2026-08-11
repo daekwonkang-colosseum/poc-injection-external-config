@@ -1,0 +1,74 @@
+name: CI
+
+# 성능 메모
+# 이 저장소는 Gradle 6.5 / Java 8 로 고정돼 있다. configuration cache 는 Gradle 6.6
+# 부터라 쓸 수 없고, build cache 와 병렬 실행은 쓸 수 있다. 아래 설정은 그 제약 안에서
+# 실행 시간을 줄이는 순서대로 배치했다.
+
+on:
+  push:
+    branches: [main]
+    # 문서만 바뀐 커밋에 러너를 태우지 않는다. docs/ 는 5,700줄이라 자주 건드리게 된다.
+    # 주의: main 에 required status check 를 걸면 paths-ignore 로 스킵된 PR 이
+    # "대기 중"으로 남아 머지가 막힌다. 그 경우 아래 두 paths-ignore 를 지울 것.
+    paths-ignore: ['**.md', 'docs/**', '.gitignore', 'LICENSE']
+  pull_request:
+    paths-ignore: ['**.md', 'docs/**', '.gitignore', 'LICENSE']
+  workflow_dispatch:
+
+# 이 워크플로우는 빌드와 테스트만 한다. 쓰기 권한을 주지 않는다.
+permissions:
+  contents: read
+
+# 같은 브랜치에 연속 push 하면 앞선 실행을 취소한다. 러너 시간을 가장 크게 아끼는 항목이다.
+# main 은 취소하지 않는다 — 릴리스 기준점의 결과가 사라지면 안 된다.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build:
+    name: build (JDK 8)
+    runs-on: ubuntu-latest
+    # 전체 빌드가 1분 내외다. 15분을 넘겼다면 매달린 것이므로 러너를 놓아준다.
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # fetch-depth 기본값 1. 이 CI 는 이력을 읽지 않으므로 얕은 클론으로 충분하다.
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          # cache: gradle 을 여기서 켜지 않는다. 아래 setup-gradle 이 더 정교한 캐시를
+          # 관리하고, 둘을 같이 쓰면 같은 디렉토리를 두 번 저장·복원해 오히려 느려진다.
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        # 이 액션이 Gradle 배포본·의존성·build cache 를 한꺼번에 캐시한다.
+        # 캐시 쓰기는 기본 브랜치에서만 일어나고 PR 은 읽기 전용으로 동작하므로,
+        # 포크 PR 이 캐시를 오염시킬 수 없다. 기본 동작이 의도와 같아 별도 설정하지 않는다.
+
+      - name: Build and test
+        run: ./gradlew build --build-cache --stacktrace
+        # --build-cache: 바뀌지 않은 모듈의 컴파일·테스트 태스크를 재사용한다.
+        # --stacktrace: 성공 시에는 아무것도 출력하지 않고, 실패 시에만 스택을 남긴다.
+        #   실패 원인을 보려고 CI 를 다시 돌리는 왕복을 없앤다.
+        # --no-daemon 은 쓰지 않는다. setup-gradle 이 데몬 재사용을 전제로 캐시를
+        #   구성하므로 끄면 오히려 느려진다.
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/test
+            **/build/test-results/test
+          retention-days: 7
+          if-no-files-found: ignore
+        # 실패했을 때만 올린다. 성공한 빌드의 리포트는 아무도 열지 않으면서
+        # 매 실행마다 업로드 시간과 저장 용량을 쓴다.
