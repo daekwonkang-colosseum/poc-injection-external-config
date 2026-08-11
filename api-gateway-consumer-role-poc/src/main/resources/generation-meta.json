@@ -1,0 +1,5 @@
+{
+  "profile" : "POC",
+  "consumers" : [ "poc" ],
+  "apiManagementHost" : "http://api-management.poc.internal"
+}

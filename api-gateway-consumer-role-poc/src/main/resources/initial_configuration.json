@@ -1,0 +1,33 @@
+{
+  "consumers" : {
+    "poc" : {
+      "routingPolicies" : {
+        "providers" : [ {
+          "name" : "order_api",
+          "regions" : [ {
+            "name" : "TO_LOAD_BALANCER",
+            "usage" : 100,
+            "routingType" : "DIRECT",
+            "targets" : [ {
+              "scheme" : "HTTP",
+              "host" : "order-api.poc.internal",
+              "port" : 80
+            } ]
+          } ]
+        }, {
+          "name" : "product_api",
+          "regions" : [ {
+            "name" : "TO_LOAD_BALANCER",
+            "usage" : 100,
+            "routingType" : "DIRECT",
+            "targets" : [ {
+              "scheme" : "HTTP",
+              "host" : "product-api.poc.internal",
+              "port" : 80
+            } ]
+          } ]
+        } ]
+      }
+    }
+  }
+}

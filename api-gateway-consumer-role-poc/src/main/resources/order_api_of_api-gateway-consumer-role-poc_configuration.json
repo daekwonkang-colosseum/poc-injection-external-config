@@ -1,0 +1,13 @@
+{
+  "name" : "order_api",
+  "specifications" : [ {
+    "id" : "6512a0b1c2d3e4f500000001",
+    "revision" : "6512a0b1c2d3e4f5000000a1",
+    "type" : "SINGLE",
+    "path" : "/api/v1/orders/{orderId}",
+    "method" : "get",
+    "produces" : [ "application/json" ],
+    "consumes" : [ ],
+    "timeout" : 3000
+  } ]
+}

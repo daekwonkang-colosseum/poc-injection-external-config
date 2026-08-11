@@ -1,0 +1,13 @@
+{
+  "name" : "product_api",
+  "specifications" : [ {
+    "id" : "6512a0b1c2d3e4f500000002",
+    "revision" : "6512a0b1c2d3e4f5000000a2",
+    "type" : "SINGLE",
+    "path" : "/api/v1/products/{productId}",
+    "method" : "get",
+    "produces" : [ "application/json" ],
+    "consumes" : [ ],
+    "timeout" : 8000
+  } ]
+}
