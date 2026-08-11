@@ -167,3 +167,12 @@ cd poc-injection-external-config
 POC가 버린 것: 인증 토큰, 요청 서명, rate limit, precondition, 라우팅 정책 원격 갱신, API 시뮬레이션, dry-run, 로그 포매터, Fluent API, WebClient/OkHttp3 확장. `TargetUriFinder.indexTargets` 는 provider 정책의 첫 번째 region·target만 읽는다 — `usage`/`routingType` 이 암시하는 가중치 라우팅은 구현하지 않았다.
 
 `PylonConfiguration` / `SpecResolver` / `SpecCustomizer` / `TimeoutCustomizer` / `ConnectionPoolCustomizer` / `RestTemplatePool` 의 이름과 흐름은 실물과 1:1이다.
+
+## 설계 문서
+
+이 POC가 만들어진 경위와 근거는 `docs/` 에 있다.
+
+- [`docs/design.md`](docs/design.md) — 설계 스펙. 모듈 경계와 소유권 구분, 재현할 함정 3개의 선정 근거, 버린 기능 목록, 검증 전략.
+- [`docs/implementation-plan.md`](docs/implementation-plan.md) — 16개 태스크 구현 계획. 태스크마다 파일 목록·인터페이스·TDD 단계와 전체 코드가 들어 있다.
+
+두 문서는 구현 전에 작성됐고, 구현 중 발견된 결함(예: `@SpringBootConfiguration` 이 `@ComponentScan` 을 포함하지 않아 `@Import` 가 필요하다는 점)은 코드가 정답이다. 문서는 의도의 기록이지 최신 명세가 아니다.
