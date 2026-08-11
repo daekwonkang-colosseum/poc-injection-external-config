@@ -1,0 +1,5 @@
+{
+  "profile": "TEST",
+  "consumers": ["poc"],
+  "apiManagementHost": "http://api-management.fixture.internal"
+}

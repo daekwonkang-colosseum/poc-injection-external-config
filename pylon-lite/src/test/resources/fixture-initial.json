@@ -1,0 +1,23 @@
+{
+  "consumers": {
+    "poc": {
+      "routingPolicies": {
+        "providers": [
+          {
+            "name": "order_api",
+            "regions": [
+              {
+                "name": "TO_LOAD_BALANCER",
+                "usage": 100,
+                "routingType": "DIRECT",
+                "targets": [
+                  { "scheme": "HTTP", "host": "order-api.fixture.internal", "port": 80 }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
