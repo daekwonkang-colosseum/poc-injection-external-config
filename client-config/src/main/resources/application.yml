@@ -1,0 +1,12 @@
+# API-GW(pylon) HTTP Client 옵션 - poc.client.config.PylonClientConfig
+# providers 를 비워두면 생성된 스펙의 timeout 을 그대로 쓴다(= 라이브러리 기본 동작).
+# 환경별로 다르게 하려면 application-{local,production}.yml 에서 덮어쓴다.
+# provider 명에 '_' 가 있어 map key 는 대괄호 표기가 필요하다.
+pylon:
+  client:
+    connect-timeout: 3000
+
+logging:
+  level:
+    poc.client.config: INFO
+    poc.apigateway.pylon: INFO
