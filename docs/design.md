@@ -20,9 +20,24 @@
 ### 하지 않는 것 (Non-goals)
 - 실제 API-GW 프로토콜 준수 (인증 토큰, 요청 서명, rate limit, precondition)
 - 라우팅 정책 원격 갱신, API 시뮬레이션, dry-run
-- Fluent API, WebClient/OkHttp3 확장
+- Fluent API — 전송 구현체가 아니라 호출 스타일이다. 실물 `GenericApiClient` 도
+  `specResolver` → `restTemplatePool.get(spec)` 를 그대로 쓰므로 RestTemplate 경로에 이미 포함된다
 - 실행 가능한 데모 앱 (검증은 통합테스트로만)
 - 현재 `mycoupang-app` 코드베이스와의 연동 — POC는 완전 독립이다
+
+### 범위 확장 (2026-08-12)
+
+**WebClient/OkHttp3 확장은 non-goal 에서 목표로 승격됐다.** 이 문서를 쓴 시점의 목표는
+"RestTemplate 한 경로에서 주입이 되는가" 였으나, 이후 목표가
+**"여러 전송 구현체에서 하나의 외부 설정이 동일한 유효 옵션을 만드는가"** 로 확장됐다.
+
+배경·설계 결정·전송별 좌석 매핑은 별도 문서에 있다.
+
+- [`superpowers/specs/2026-08-12-transport-uniform-config-injection-design.md`](superpowers/specs/2026-08-12-transport-uniform-config-injection-design.md)
+- [`superpowers/plans/2026-08-12-transport-uniform-config-injection.md`](superpowers/plans/2026-08-12-transport-uniform-config-injection.md)
+
+이 문서(design.md)는 최초 설계 의도의 기록으로 남긴다. 아래 4~12절은 그 시점의 3모듈
+구성을 서술하며, 현재 모듈 구성과 검증 전략은 README 와 위 spec 이 최신이다.
 
 ### 제약
 - **`poc-injection-external-config/` 는 독립 Gradle 빌드다.** 루트 `settings.gradle.kts` 에 포함하지 않는다. 디렉토리째 다른 프로젝트로 옮겨서 그대로 빌드되어야 한다.

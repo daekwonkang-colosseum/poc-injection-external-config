@@ -2,11 +2,13 @@ package poc.client.config.transport
 
 import org.apache.http.client.methods.HttpGet
 import poc.apigateway.pylon.HttpClientConnectionManagerFactory
+import feign.Request as FeignRequest
 import io.netty.handler.timeout.ReadTimeoutException
 import okhttp3.Request
 import poc.client.contract.ClientOptions
 import reactor.core.Exceptions
 import java.net.SocketTimeoutException
+import java.nio.charset.StandardCharsets
 
 /**
  * 적합성 매트릭스가 전송을 동일하게 다루기 위한 테스트 전용 어댑터.
@@ -77,4 +79,23 @@ class OkHttp3Probe : TransportProbe {
     override val timeoutFailure: Class<out Throwable> = SocketTimeoutException::class.java
 
     override fun toString(): String = "okhttp3"
+}
+
+class FeignProbe : TransportProbe {
+
+    private val pool = ContractFeignClientPool(ApacheHttpClientPool(HttpClientConnectionManagerFactory()))
+
+    override fun clientFor(options: ClientOptions): Any = pool.get(options)
+
+    override fun call(options: ClientOptions, url: String): Int {
+        val transport = pool.get(options)
+        val request = FeignRequest.create(
+            FeignRequest.HttpMethod.GET, url, emptyMap(), null, StandardCharsets.UTF_8
+        )
+        return transport.client.execute(request, transport.options).status()
+    }
+
+    override val timeoutFailure: Class<out Throwable> = SocketTimeoutException::class.java
+
+    override fun toString(): String = "feign"
 }
