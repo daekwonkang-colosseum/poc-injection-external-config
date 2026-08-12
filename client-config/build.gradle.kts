@@ -8,6 +8,7 @@ dependencies {
     api(project(":pylon-lite-webclient"))
     api(project(":pylon-lite-okhttp3"))
     api(project(":client-contract"))
+    api("io.github.openfeign:feign-core:10.12")
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlin:kotlin-reflect")

@@ -66,7 +66,7 @@ class TransportConformanceTest {
             ApacheHttpClientProbe(),
             WebClientProbe(),
             OkHttp3Probe(),
-            // PR 5: FeignProbe
+            FeignProbe(),
         )
     }
 }
