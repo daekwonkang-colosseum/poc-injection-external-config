@@ -3,6 +3,7 @@ package poc.client.config.transport
 import org.apache.http.client.methods.HttpGet
 import poc.apigateway.pylon.HttpClientConnectionManagerFactory
 import io.netty.handler.timeout.ReadTimeoutException
+import okhttp3.Request
 import poc.client.contract.ClientOptions
 import reactor.core.Exceptions
 import java.net.SocketTimeoutException
@@ -62,4 +63,18 @@ class WebClientProbe : TransportProbe {
     override val timeoutFailure: Class<out Throwable> = ReadTimeoutException::class.java
 
     override fun toString(): String = "webclient"
+}
+
+class OkHttp3Probe : TransportProbe {
+
+    private val pool = ContractOkHttp3ClientPool()
+
+    override fun clientFor(options: ClientOptions): Any = pool.get(options)
+
+    override fun call(options: ClientOptions, url: String): Int =
+        pool.get(options).newCall(Request.Builder().url(url).build()).execute().use { it.code() }
+
+    override val timeoutFailure: Class<out Throwable> = SocketTimeoutException::class.java
+
+    override fun toString(): String = "okhttp3"
 }

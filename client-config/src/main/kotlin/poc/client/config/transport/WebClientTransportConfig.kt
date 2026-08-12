@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
-import poc.apigateway.pylon.configuration.PylonConfiguration
 import poc.apigateway.pylon.configuration.PylonWebClientConfiguration
 import poc.apigateway.pylon.extension.webclient.WebClientPool
 import poc.client.config.ClientOptionsFactory
@@ -17,11 +16,8 @@ import poc.client.config.ClientOptionsFactory
  * 라이브러리는 한 줄도 고치지 않는다.
  */
 @Configuration
-@Import(PylonWebClientConfiguration::class)
+@Import(PylonWebClientConfiguration::class, ClientContractConfig::class)
 class WebClientTransportConfig {
-
-    @Bean
-    fun clientOptionsFactory(configuration: PylonConfiguration) = ClientOptionsFactory(configuration)
 
     @Bean
     @Primary
