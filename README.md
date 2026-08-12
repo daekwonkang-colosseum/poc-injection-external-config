@@ -335,6 +335,14 @@ WebClient/OkHttp3 확장은 **미러링했다.** 다만 실물이 함께 등록�
 
 `PylonConfiguration` / `SpecResolver` / `SpecCustomizer` / `TimeoutCustomizer` / `ConnectionPoolCustomizer` / `RestTemplatePool` 의 이름과 흐름은 실물과 1:1이다.
 
+## 자기 서비스에 적용하려면
+
+→ **[`docs/adoption-guide.md`](docs/adoption-guide.md)**
+
+사내 api-pylon 생성 어댑터를 쓰는 서비스 팀을 위한 적용 가이드다. 값을 주는 대신 **자기 생성 jar 를 열어 값을 찾는 명령**을 준다 — 전송 확장 지원 여부, provider 별 timeout 편차, 원격 갱신 활성 여부는 앱마다 다르고, 그것이 어떤 함정에 해당하는지를 결정한다.
+
+맨 앞에 "이 가이드가 필요 없는 경우" 분기가 있다. **RestTemplate 만 쓰는 앱이 대다수이며 그 경우 함정 4·5 와 전송 계약은 무관하다.**
+
 ## 설계 문서
 
 이 POC가 만들어진 경위와 근거는 `docs/` 에 있다. **모두 완료된 작업의 기록이며, 현재 상태를 알려면 이 README 를 읽어라.**
