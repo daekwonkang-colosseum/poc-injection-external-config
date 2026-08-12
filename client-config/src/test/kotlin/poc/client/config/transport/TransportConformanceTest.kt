@@ -65,7 +65,7 @@ class TransportConformanceTest {
         fun transports(): List<TransportProbe> = listOf(
             ApacheHttpClientProbe(),
             WebClientProbe(),
-            // PR 4: OkHttp3ClientProbe
+            OkHttp3Probe(),
             // PR 5: FeignProbe
         )
     }

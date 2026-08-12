@@ -6,6 +6,7 @@ plugins {
 dependencies {
     api(project(":api-gateway-consumer-role-poc"))
     api(project(":pylon-lite-webclient"))
+    api(project(":pylon-lite-okhttp3"))
     api(project(":client-contract"))
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
