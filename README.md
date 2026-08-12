@@ -100,7 +100,7 @@ api_gateway:
 
 2번을 쓰려면 `Provider.readTimeout` 이 필수 파라미터이므로 provider 단위 `read-timeout` 도 함께 줘야 하는데, 그 순간 뒤에서 설명하는 provider 일괄 설정 클로버 위험이 그대로 발동한다 — 스펙별로 더 긴 jar timeout이 있었다면 per-spec 항목으로 복구해야 한다.
 
-## 재현한 함정 3개
+## 재현한 함정 6개
 
 이게 POC의 실질 콘텐츠다. 셋 다 `api-pylon-tools:2.14.9.RELEASE` 에서 확인한 실제 동작이다.
 
@@ -158,6 +158,36 @@ OkHttpClient get(String specId)      // OkHttp3ClientPool  ← 옵션 캐리어�
 jar 의 `product_api` 스펙은 8000ms 인데 이 경로에서는 3000ms 가 된다. **5초가 조용히 잘린다.**
 
 → `DefaultOkHttp3ClientPoolTest` (결함 고정) / `OkHttp3PoolOverrideTest` (같은 컨텍스트에서 두 빈을 나란히 대조)
+
+### 함정 6 — 원격 정책 갱신이 주입된 timeout 을 되돌린다
+
+앞의 다섯은 기동 시점의 문제다. 이건 **기동 후에** 벌어진다.
+
+`ApiProviderPolicyDeployer.updateTimeout` 이 원격 값으로 `specResolver.update(...)` 를 호출하는데, `SpecResolver.update` 는 `isApplicableInRuntime() == true` 인 커스터마이저만 태운다.
+
+| 커스터마이저 | `isApplicableInRuntime()` | 갱신 후 |
+|---|---|---|
+| `TimeoutCustomizer` | **false** | **주입값 소실** |
+| `ConnectionPoolCustomizer` | true | 유지 |
+| `ManualOverrideCustomizer` | true | 유지 |
+
+**셋 중 timeout 만 사라진다.** `@Primary` 로 이겨 놓은 값이 첫 정책 갱신 주기에 API Management 값으로 되돌아간다. 즉 앞선 다섯 함정을 모두 통과해도 **주입은 기동 스냅샷에서만 유효하다.**
+
+#### 방어 — 약점이 곧 탈출구다
+
+`ApiGatewayAdapterConfig.specResolver` 는 `List<SpecCustomizer>` 로 **리스트 주입**을 받는다. 이것은 `@Primary` 전략의 전제(모든 소비처가 타입 단건 주입)가 깨지는 유일한 지점이라 함정 1 의 관점에서는 약점이다. 그런데 리스트는 중복 제거를 하지 않으므로, **빈을 하나 더 등록하면 그대로 체인에 합류한다.**
+
+```kotlin
+@Bean   // @Primary 가 아니다. 추가 빈이다.
+fun runtimeTimeoutCustomizer(property: PylonClientProperty) =
+    RuntimeTimeoutCustomizer.from(property)   // isApplicableInRuntime() = true
+```
+
+라이브러리 커스터마이저와 **같은 출처**(`PylonClientProperty`)에서 만들므로 기동 시점에는 두 커스터마이저가 같은 값을 낸다 — 체인 내 순서에 관계없이 결과가 같다. 갱신 시점에는 클라이언트 것만 남아 매번 주입값을 다시 씌운다.
+
+설정이 없는 provider 는 손대지 않으므로 원격 값이 그대로 반영된다. 되돌리는 것은 클라이언트가 명시한 값뿐이다.
+
+→ `ApiProviderPolicyDeployerTest` (결함 고정) / `RuntimeTimeoutCustomizerTest`·`RuntimePolicyClobberDefenceTest` (방어)
 
 ## 문서화한 위험 — provider 일괄 설정
 
@@ -261,7 +291,7 @@ cd poc-injection-external-config
 ./gradlew :client-config:test --tests '*TransportConformanceTest'
 ```
 
-전체 빌드는 테스트 147개로 `BUILD SUCCESSFUL` 이다 — pylon-lite 65, pylon-lite-webclient 3, pylon-lite-okhttp3 4, api-gateway-consumer-role-poc 4, client-contract 5, client-config 66.
+전체 빌드는 테스트 158개로 `BUILD SUCCESSFUL` 이다 — pylon-lite 69, pylon-lite-webclient 3, pylon-lite-okhttp3 4, api-gateway-consumer-role-poc 4, client-contract 5, client-config 73.
 
 신규 의존성(`reactor-netty`, `okhttp3`, `feign-core`)은 최초 1회 mavenCentral 해석이 필요하다. 버전은 `feign-core` 만 명시하고 나머지는 Spring Boot 2.3.4 BOM 에 위임한다 — 로컬 캐시의 okhttp 5.x 는 Kotlin 기반의 별개 API 라 실물(3.x) 미러링에 쓸 수 없다.
 
@@ -286,11 +316,7 @@ WebClient/OkHttp3 확장은 **미러링했다.** 다만 실물이 함께 등록�
 
 **Feign 은 미러링이 아니다.** 실물 전 소스에 feign 문자열이 0건이므로 대조할 실물이 없다 — 계약을 새 전송으로 확장 적용한 사례다.
 
-### 원격 정책 갱신이 주입을 되돌린다 (범위 밖, 기록만)
-
-`ApiProviderPolicyDeployer.updateTimeout` 이 원격 정책 값으로 `specResolver.update(...)` 를 호출하는데, `SpecResolver.update` 는 `isApplicableInRuntime() == true` 인 커스터마이저만 태운다. 그리고 실물 `TimeoutCustomizer` 는 **`false`** 다. 즉 `@Primary` 로 이겨 놓은 timeout 이 첫 정책 갱신 주기에 API Management 값으로 되돌아간다.
-
-라우팅 정책 원격 갱신이 이 POC 의 non-goal 이므로 재현하지 않았다. 실제 운영에 적용할 때 반드시 확인해야 할 항목이라 여기 남긴다.
+**원격 라우팅 정책은 절반만 미러링했다.** 값이 *도착했을 때* 무슨 일이 일어나는가(`ApiProviderPolicyDeployer.updateTimeout`)는 함정 6 으로 재현하되, *어떻게 가져오는가*(`UnifiedRoutingPolicyUpdater` 의 원격 fetch·스케줄러, `ApiProviderPolicies` DTO 트리)는 여전히 non-goal 이다.
 
 `PylonConfiguration` / `SpecResolver` / `SpecCustomizer` / `TimeoutCustomizer` / `ConnectionPoolCustomizer` / `RestTemplatePool` 의 이름과 흐름은 실물과 1:1이다.
 

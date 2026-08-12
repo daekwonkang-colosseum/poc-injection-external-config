@@ -63,6 +63,19 @@ class PylonClientConfig {
     }
 
     /**
+     * 함정 6 방어 — 원격 정책 갱신이 주입된 timeout 을 되돌리는 것을 막는다.
+     *
+     * **`@Primary` 가 아니라 추가 빈이다.** `ApiGatewayAdapterConfig.specResolver` 는
+     * `List<SpecCustomizer>` 로 리스트 주입을 받으므로 `@Primary` 가 무력하지만,
+     * 반대로 빈을 하나 더 등록하면 그대로 체인에 합류한다.
+     *
+     * @see RuntimeTimeoutCustomizer 왜 라이브러리 커스터마이저만으로는 부족한지
+     */
+    @Bean
+    fun runtimeTimeoutCustomizer(property: PylonClientProperty): RuntimeTimeoutCustomizer =
+        RuntimeTimeoutCustomizer.from(property)
+
+    /**
      * provider 명/specId 오타는 조용한 무동작으로 끝난다. 환경별로 튜닝하는 값이라
      * 그 침묵이 가장 비싸므로 부팅을 실패시킨다. 두 목록 모두 생성된 jar 에서
      * 오므로 배포마다 결정적이고, 로컬/CI 에서 먼저 걸린다.

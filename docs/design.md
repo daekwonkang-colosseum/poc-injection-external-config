@@ -19,7 +19,8 @@
 
 ### 하지 않는 것 (Non-goals)
 - 실제 API-GW 프로토콜 준수 (인증 토큰, 요청 서명, rate limit, precondition)
-- 라우팅 정책 원격 갱신, API 시뮬레이션, dry-run
+- 라우팅 정책 **원격 fetch**(스케줄러·DTO 트리), API 시뮬레이션, dry-run
+  — 단 원격 값이 *도착했을 때* 주입된 timeout 이 되돌아가는 문제(함정 6)는 2026-08-12 에 스코프로 들어왔다
 - Fluent API — 전송 구현체가 아니라 호출 스타일이다. 실물 `GenericApiClient` 도
   `specResolver` → `restTemplatePool.get(spec)` 를 그대로 쓰므로 RestTemplate 경로에 이미 포함된다
 - 실행 가능한 데모 앱 (검증은 통합테스트로만)
