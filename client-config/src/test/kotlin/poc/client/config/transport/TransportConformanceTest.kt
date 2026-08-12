@@ -64,7 +64,7 @@ class TransportConformanceTest {
         @JvmStatic
         fun transports(): List<TransportProbe> = listOf(
             ApacheHttpClientProbe(),
-            // PR 3: WebClientProbe
+            WebClientProbe(),
             // PR 4: OkHttp3ClientProbe
             // PR 5: FeignProbe
         )

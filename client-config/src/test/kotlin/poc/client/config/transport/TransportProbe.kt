@@ -2,7 +2,9 @@ package poc.client.config.transport
 
 import org.apache.http.client.methods.HttpGet
 import poc.apigateway.pylon.HttpClientConnectionManagerFactory
+import io.netty.handler.timeout.ReadTimeoutException
 import poc.client.contract.ClientOptions
+import reactor.core.Exceptions
 import java.net.SocketTimeoutException
 
 /**
@@ -40,4 +42,24 @@ class ApacheHttpClientProbe : TransportProbe {
     override val timeoutFailure: Class<out Throwable> = SocketTimeoutException::class.java
 
     override fun toString(): String = "apache-httpclient"
+}
+
+class WebClientProbe : TransportProbe {
+
+    private val pool = ContractWebClientPool()
+
+    override fun clientFor(options: ClientOptions): Any = pool.get(options)
+
+    override fun call(options: ClientOptions, url: String): Int =
+        try {
+            pool.get(options).get().uri(url).exchange().block()!!.rawStatusCode()
+        } catch (e: RuntimeException) {
+            // Reactor 는 체크 예외를 ReactiveException 으로 감싼다.
+            // 매트릭스가 전송별 원인 예외를 그대로 단언할 수 있게 여기서 벗긴다.
+            throw Exceptions.unwrap(e)
+        }
+
+    override val timeoutFailure: Class<out Throwable> = ReadTimeoutException::class.java
+
+    override fun toString(): String = "webclient"
 }
