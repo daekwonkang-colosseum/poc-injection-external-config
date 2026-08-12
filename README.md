@@ -237,6 +237,21 @@ public interface ClientPool<C> {
 
 계약을 씌우지 않는 이유는 `RestTemplatePool` 이 인터페이스가 아닌 구체 클래스이고 `DynamicApiClient` 가 그 타입을 직접 주입받기 때문이다. `@Primary` 로 이기려면 상속뿐인데, 그러면 계약이 Spring 에 강결합된다.
 
+#### 매트릭스가 덮지 못하는 것 — connectTimeout
+
+`ClientOptions` 가 나르는 값은 넷인데(`connectTimeout`, `readTimeout`, `poolName`, `poolSize`) **매트릭스가 전 전송 공통으로 보는 것은 readTimeout 과 캐시 키 규율뿐이다.** 나머지 둘은 전송별 테스트에 흩어져 있고, 커버리지가 고르지 않다.
+
+| 전송 | readTimeout | poolSize | connectTimeout |
+|---|---|---|---|
+| Apache HC | 소켓 도달 | 커넥션 매니저 회수 | **미검증** |
+| WebClient | 소켓 도달 | 동시성 행동 | **미검증** |
+| OkHttp3 | 소켓 도달 | `Dispatcher` 회수 | 회수 |
+| Feign | 소켓 도달 | 커넥션 매니저 회수 | `Request.Options` 회수 |
+
+connectTimeout 을 행동으로 검증하려면 **라우팅되지 않는 주소**로 접속을 시도해 타임아웃을 기다려야 하는데, 환경(방화벽·네트워크 정책)에 따라 즉시 거부되거나 훨씬 오래 걸려 CI 에서 불안정하다. Apache HC 는 `CloseableHttpClient` 에서 `RequestConfig` 를 회수할 공개 API 가 없고, WebClient 는 `TcpClient` 옵션을 되읽을 수 없어 회수 단언조차 불가능하다.
+
+**"하나의 설정이 모든 전송에서 같은 유효 옵션을 만든다"는 주장은 readTimeout·poolSize 에 대해서만 테스트로 뒷받침된다.** connectTimeout 은 `ClientOptions` 가 단일 값으로 나르고 각 전송이 자기 좌석에 그대로 넘긴다는 것이 코드로는 명백하지만, 절반의 전송에서 단언되지 않는다.
+
 ## 왜 `@Primary` 인가 — 표준 훅이 전부 막혀 있다
 
 "남의 빈을 밖에서 고친다"는 프레임워크 표준 훅이 셋 있는데 pylon 에는 전부 통하지 않는다.
@@ -322,9 +337,21 @@ WebClient/OkHttp3 확장은 **미러링했다.** 다만 실물이 함께 등록�
 
 ## 설계 문서
 
-이 POC가 만들어진 경위와 근거는 `docs/` 에 있다.
+이 POC가 만들어진 경위와 근거는 `docs/` 에 있다. **모두 완료된 작업의 기록이며, 현재 상태를 알려면 이 README 를 읽어라.**
+
+1차 — 외부 설정 주입 자체 (2026-08-11)
 
 - [`docs/design.md`](docs/design.md) — 설계 스펙. 모듈 경계와 소유권 구분, 재현할 함정 3개의 선정 근거, 버린 기능 목록, 검증 전략.
-- [`docs/implementation-plan.md`](docs/implementation-plan.md) — 16개 태스크 구현 계획. 태스크마다 파일 목록·인터페이스·TDD 단계와 전체 코드가 들어 있다.
+- [`docs/implementation-plan.md`](docs/implementation-plan.md) — 16개 태스크 구현 계획. **완료됐다. 실행 대상이 아니다** — 3모듈·93테스트 기준으로 쓰여 지금 저장소와 다르다.
 
-두 문서는 구현 전에 작성됐고, 구현 중 발견된 결함(예: `@SpringBootConfiguration` 이 `@ComponentScan` 을 포함하지 않아 `@Import` 가 필요하다는 점)은 코드가 정답이다. 문서는 의도의 기록이지 최신 명세가 아니다.
+2차 — 전송 구현체 공통 옵션 계약 (2026-08-12)
+
+- [`docs/superpowers/specs/2026-08-12-transport-uniform-config-injection-design.md`](docs/superpowers/specs/2026-08-12-transport-uniform-config-injection-design.md) — 전송별 좌석 매핑, 계약 설계, 채택하지 않은 대안 4가지.
+- [`docs/superpowers/plans/2026-08-12-transport-uniform-config-injection.md`](docs/superpowers/plans/2026-08-12-transport-uniform-config-injection.md) — 9단계·PR 5개 분할 계획. **완료됐다.**
+
+문서는 의도의 기록이지 최신 명세가 아니다. 구현 중 발견된 결함(예: `@SpringBootConfiguration` 이 `@ComponentScan` 을 포함하지 않아 `@Import` 가 필요하다는 점, RestTemplate 이 실은 유일하게 옳게 하던 경로였다는 점)은 **코드가 정답이다.**
+
+문서와 현재 상태가 갈리는 지점은 두 곳이다.
+
+- **`pylon-lite` 수정 금지** — 1차 문서는 절대 금지로 적었으나, 함정 6 재현 시 **실물 미러링 자격에 한해** 예외를 뒀다. 라이브러리 동작을 클라이언트 편의로 바꾸는 것은 여전히 금지다.
+- **2차 spec 의 RestTemplate 대조군** — "기대 불일치 행"으로 계획했으나 구현하며 정반대임이 드러났다. 위 매트릭스 절이 최신이다.

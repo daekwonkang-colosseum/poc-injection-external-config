@@ -1,6 +1,33 @@
 # poc-injection-external-config Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> ## ⚠️ 이 계획은 완료됐다. 실행하지 말 것.
+>
+> **작성 2026-08-11 · 완료 2026-08-11 · 이후 저장소가 더 진행됐다.**
+>
+> 아래 16개 태스크는 전부 구현·머지됐고, 그 뒤 **전송 구현체 공통 옵션 계약**과
+> **원격 정책 갱신 방어**가 추가되면서 모듈 구성·테스트 수·제약이 모두 바뀌었다.
+> 이 문서를 태스크 목록으로 실행하면 지금 저장소와 다른 것을 만들게 된다.
+>
+> | 항목 | 이 문서 (2026-08-11) | 현재 |
+> |---|---|---|
+> | 모듈 | 3개 | 6개 (`client-contract`, `pylon-lite-webclient`, `pylon-lite-okhttp3` 추가) |
+> | 전송 | RestTemplate 하나 | 5개 (+ Apache HC·WebClient·OkHttp3·Feign) |
+> | 재현한 함정 | 3개 | 6개 |
+> | 테스트 | 93 | 158 |
+> | `pylon-lite` 수정 | 절대 금지 | **실물 미러링 자격에 한해 허용** (함정 6 재현 시 적용) |
+>
+> **현재 상태를 알려면 [`../README.md`](../README.md) 를 읽어라.** 이 문서는 최초 구현이
+> 어떤 순서와 근거로 진행됐는지의 기록으로만 남긴다.
+>
+> 이후 작업의 설계·계획은 다음에 있다.
+> - [`superpowers/specs/2026-08-12-transport-uniform-config-injection-design.md`](superpowers/specs/2026-08-12-transport-uniform-config-injection-design.md)
+> - [`superpowers/plans/2026-08-12-transport-uniform-config-injection.md`](superpowers/plans/2026-08-12-transport-uniform-config-injection.md)
+
+---
+
+*아래는 2026-08-11 최초 구현 계획 원문이다. 이미 완료된 내용이며 갱신하지 않는다.*
+
+> **For agentic workers:** ~~REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task.~~ **완료된 계획이다. 실행 대상이 아니다.** Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 제어할 수 없는 라이브러리 jar가 이미 환경 값(timeout·host)을 들고 있을 때, 클라이언트가 그 모듈을 수정하지 않고 외부 설정 주입만으로 값을 덮어쓰는 것을 테스트로 증명하는 독립 POC를 만든다.
 
